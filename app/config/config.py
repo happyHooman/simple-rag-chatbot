@@ -34,5 +34,15 @@ class Settings:
     # Authentication Settings
     VALID_TOKENS: str = os.getenv("VALID_TOKENS") or "test_token,admin_token,production_token"
 
+    # Redis Configuration
+    REDIS_URL: str = os.getenv("REDIS_URL") or "redis://localhost:6379/0"
+
+    # Celery Configuration
+    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL") or REDIS_URL
+    CELERY_RESULT_BACKEND: str = os.getenv("CELERY_RESULT_BACKEND") or REDIS_URL
+    CELERY_TASK_TRACK_STARTED: bool = True
+    CELERY_TASK_TIME_LIMIT: int = int(os.getenv("CELERY_TASK_TIME_LIMIT") or "1800")  # 30 minutes
+    CELERY_TASK_SOFT_TIME_LIMIT: int = int(os.getenv("CELERY_TASK_SOFT_TIME_LIMIT") or "1500")  # 25 minutes
+
 
 settings = Settings()
