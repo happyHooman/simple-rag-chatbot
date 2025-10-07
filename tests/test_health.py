@@ -97,7 +97,7 @@ class TestDatabaseConnectionCheck:
 class TestEmbeddingsStatusCheck:
     """Test embeddings status check."""
     
-    @patch('app.api.embeddings.get_embeddings_count')
+    @patch('app.api.helpers.health_check.get_embeddings_count')
     def test_embeddings_with_data(self, mock_count):
         """Test when embeddings exist."""
         mock_count.return_value = 2
@@ -107,7 +107,7 @@ class TestEmbeddingsStatusCheck:
         assert result["embeddings_count"] == 2
         assert result["has_embeddings"] is True
     
-    @patch('app.api.embeddings.get_embeddings_count')
+    @patch('app.api.helpers.health_check.get_embeddings_count')
     def test_embeddings_empty(self, mock_count):
         """Test when no embeddings exist."""
         mock_count.return_value = 0

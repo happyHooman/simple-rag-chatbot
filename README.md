@@ -41,13 +41,13 @@ uv run python scripts/prebuild.py
 ### Code Quality
 ```bash
 # Linting
-uv run ruff check src/
+uv run ruff check app/
 
 # Format code
-uv run ruff format src/
+uv run ruff format app/
 
 # Type checking
-uv run mypy src/
+uv run mypy app/
 ```
 
 ### Database
@@ -88,18 +88,28 @@ This runs:
 ## 🏗️ Project Structure
 
 ```
-├── src/                    # Application source code
-│   ├── config.py          # Configuration settings
-│   ├── health_check.py    # Health monitoring
-│   ├── embeddings.py      # OpenAI embeddings
-│   └── ...
-├── tests/                 # Test suites
+├── app/                   # Application source code (FastAPI convention)
+│   ├── api/              # API endpoints and routing
+│   │   ├── router.py     # Main API router
+│   │   ├── ask_question.py
+│   │   ├── embeddings.py
+│   │   └── helpers/      # Auth, middleware, health checks
+│   ├── config/           # Configuration settings
+│   ├── data/             # FAQ database
+│   ├── models.py         # Data models
+│   ├── prompts.py        # AI prompts
+│   └── sql_queries.py    # SQL queries
+├── tests/                # Test suites
 │   ├── sanity/           # Prebuild sanity tests
 │   ├── test_api.py       # API integration tests
-│   └── test_health.py    # Health check tests
+│   ├── test_auth.py      # Authentication tests
+│   ├── test_health.py    # Health check tests
+│   ├── test_integration.py # Full pipeline tests
+│   └── test_ai_router.py # AI classification tests
 ├── scripts/              # Utility scripts
 │   └── prebuild.py       # Prebuild validation
-└── docker-compose.yml    # Database setup
+├── main.py               # Application entry point
+└── docker-compose.yml    # Docker orchestration
 ```
 
 ## 🔧 Configuration

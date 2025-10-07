@@ -31,8 +31,8 @@ def main():
     print("=" * 50)
     
     checks = [
-        (["ruff", "check", "src/"], "Code linting"),
-        (["mypy", "src/"], "Type checking"),
+        (["ruff", "check", "app/"], "Code linting"),
+        (["mypy", "app/"], "Type checking"),
         (["pytest", "tests/sanity/", "-v"], "Sanity tests"),
     ]
     
