@@ -1,6 +1,15 @@
-# Test Assignment
+# RebelDot Chatbot
 
-A FastAPI application with comprehensive health monitoring and FAQ question-answering capabilities.
+An intelligent FAQ assistant powered by FastAPI, OpenAI embeddings, and semantic search. Features AI-powered question routing, background task processing with Celery, and comprehensive monitoring tools.
+
+## ✨ Key Features
+
+- **🤖 AI-Powered FAQ System** - Semantic search using OpenAI embeddings and pgvector
+- **🎯 Smart Routing** - LangChain-based classification (IT questions vs. compliance)
+- **⚡ Background Tasks** - Asynchronous embeddings processing with Celery + Redis
+- **📊 Real-time Monitoring** - Flower dashboard for task visualization
+- **🏥 Health Monitoring** - Comprehensive health checks for all services
+- **🔐 Secure** - Token-based authentication with FastAPI security
 
 ## 🚀 Quick Start
 
@@ -8,20 +17,21 @@ A FastAPI application with comprehensive health monitoring and FAQ question-answ
 - Python 3.13+
 - Docker & Docker Compose
 - `uv` package manager
+- Redis (for Celery task queue)
 
 ### Installation
 ```bash
 # Install dependencies (production)
 uv sync
 
-# Install with dev dependencies
+# Install with dev dependencies (includes Flower)
 uv sync --extra dev
 
-# Start database
+# Start all services (FastAPI, PostgreSQL, Redis, Celery Worker)
 docker compose up -d
 
-# Start application
-uv run python main.py
+# Start with dev tools (includes Adminer and Flower)
+docker compose --profile dev up -d
 ```
 
 ## 📋 Available Commands
@@ -50,85 +60,128 @@ uv run ruff format app/
 uv run mypy app/
 ```
 
-### Database
+### Docker Services
 ```bash
-# Start database
+# Start all production services (app, postgres, redis, celery worker)
 docker compose up -d
 
-# Stop database
+# Start with dev tools (+ adminer, flower)
+docker compose --profile dev up -d
+
+# View logs
+docker compose logs -f
+
+# View specific service logs
+docker compose logs -f celery_worker
+
+# Stop all services
 docker compose down
+
+# Rebuild after code changes
+docker compose up -d --build
 ```
 
-## 🏥 Health Monitoring
+### Background Tasks (Celery)
+```bash
+# View Celery worker logs
+docker compose logs -f celery_worker
 
-The application provides comprehensive health monitoring:
+# Monitor tasks with Flower (dev profile only)
+# Access at http://localhost:5555
+docker compose --profile dev up -d
+```
 
-- **GET /health** - Overall system status
-- **GET /docs** - API documentation
-- **POST /ask-question** - FAQ question answering
-- **POST /generate-embeddings** - Generate OpenAI embeddings
+## 📡 API Endpoints
+
+### Core Endpoints
+- **GET /health** - Overall system status (public)
+- **GET /docs** - Interactive API documentation (Swagger UI)
+- **POST /ask-question** - FAQ question answering (authenticated)
+
+### Background Task Endpoints
+- **POST /generate-embeddings** - Generate all FAQ embeddings (async, authenticated)
+  - Returns immediately with `task_id`
+  - Processes all FAQ items in background
+- **POST /update-embeddings** - Update embeddings incrementally (async, authenticated)
+  - Returns immediately with `task_id`
+  - Adds/updates/removes embeddings based on changes
+- **GET /tasks/{task_id}** - Check task status and result (authenticated)
+  - Monitor background task progress
+  - Retrieve task results when complete
 
 ## 🧪 Testing
 
-### Prebuild Checks
+### Quick Test
 ```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Run prebuild checks (linting, type checking, sanity tests)
 uv run python scripts/prebuild.py
 ```
 
-This runs:
-- Code linting (Ruff)
-- Type checking (MyPy)
-- Sanity tests (System readiness)
-
 ### Test Categories
-- **Sanity tests** - System readiness before deployment
-- **Unit tests** - Individual component testing
-- **Integration tests** - API endpoint testing
-
-## 🏗️ Project Structure
-
-```
-├── app/                   # Application source code (FastAPI convention)
-│   ├── api/              # API endpoints and routing
-│   │   ├── router.py     # Main API router
-│   │   ├── ask_question.py
-│   │   ├── embeddings.py
-│   │   └── helpers/      # Auth, middleware, health checks
-│   ├── config/           # Configuration settings
-│   ├── data/             # FAQ database
-│   ├── models.py         # Data models
-│   ├── prompts.py        # AI prompts
-│   └── sql_queries.py    # SQL queries
-├── tests/                # Test suites
-│   ├── sanity/           # Prebuild sanity tests
-│   ├── test_api.py       # API integration tests
-│   ├── test_auth.py      # Authentication tests
-│   ├── test_health.py    # Health check tests
-│   ├── test_integration.py # Full pipeline tests
-│   └── test_ai_router.py # AI classification tests
-├── scripts/              # Utility scripts
-│   └── prebuild.py       # Prebuild validation
-├── main.py               # Application entry point
-└── docker-compose.yml    # Docker orchestration
-```
+- **Sanity tests** - System readiness checks
+- **Unit tests** - Component-level testing
+- **Integration tests** - End-to-end API testing
+- **Auth tests** - Authentication and authorization
+- **AI Router tests** - Question classification logic
 
 ## 🔧 Configuration
 
 Environment variables (see `.env.example`):
+
+### API Settings
 - `API_TITLE`, `API_VERSION`, `API_DESCRIPTION`
 - `HOST`, `PORT`, `LOG_LEVEL`
-- `DATABASE_URL`, `OPENAI_API_KEY`
-- `SIMILARITY_THRESHOLD` - Similarity threshold (default: 0.5)
+- `VALID_TOKENS` - Comma-separated authentication tokens
+
+### Database
+- `DATABASE_URL` - PostgreSQL connection string
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+
+### Redis & Celery
+- `REDIS_URL` - Redis connection (default: redis://localhost:6379/0)
+- `CELERY_BROKER_URL` - Celery broker (uses Redis)
+- `CELERY_RESULT_BACKEND` - Result backend (uses Redis)
+- `CELERY_TASK_TIME_LIMIT` - Max task duration (default: 1800s)
+
+### OpenAI & AI Settings
+- `OPENAI_API_KEY` - Your OpenAI API key (required)
+- `SIMILARITY_THRESHOLD` - Vector similarity threshold (default: 0.5)
 - `OPENAI_CHAT_MODEL` - Chat model (default: gpt-4o-mini)
-- `OPENAI_CHAT_TEMPERATURE` - Model temperature (default: 0.7)
+- `OPENAI_CHAT_TEMPERATURE` - Model temperature (default: 0.3)
 
-## 📊 Health Status
+## 📊 Monitoring & Health
 
-The `/health` endpoint provides real-time status:
-- **operational** - All services running
+### Health Endpoint
+```bash
+curl http://localhost:8000/health
+```
+
+**Status Indicators:**
+- **operational** - All services healthy
 - **degraded** - Some services unavailable
-- **running/stopped** - Container status
-- **connected/disconnected** - Database status
+
+**Monitored Services:**
+- Docker container status
+- PostgreSQL connection & pgvector extension
+- Redis connection
+- Embeddings availability
+
+### Development Tools
+
+**Flower Dashboard** (http://localhost:5555)
+- Real-time Celery task monitoring
+- Worker health and statistics
+- Task execution history and timing
+- Only available with `--profile dev`
+
+**Adminer Database UI** (http://localhost:8080)
+- Visual PostgreSQL database management
+- SQL query editor
+- Table browser and data inspection
+- Only available with `--profile dev`
 
 ## 🐳 Docker Deployment
 
@@ -157,39 +210,46 @@ docker-compose ps
 
 ### Docker Architecture
 
-**Core Services:**
-- **FastAPI App** - Port 8000 (configurable via `APP_PORT`)
-- **PostgreSQL + pgvector** - Port 5432 (configurable via `POSTGRES_PORT`)
+**Core Services (Production):**
+- **rebeldot_app** - FastAPI application on port 8000
+- **rebeldot_postgres** - PostgreSQL + pgvector on port 5432
+- **rebeldot_redis** - Redis cache/broker on port 6379
+- **rebeldot_celery_worker** - Background task processor (Celery)
 
-**Development Tools** (run with `--profile dev`):
-- **Adminer** - Database admin interface on port 8080
+**Development Tools** (`--profile dev`):
+- **rebeldot_adminer** - Database admin UI on port 8080
+- **rebeldot_flower** - Celery task monitor on port 5555
 
 **Networking:**
 - All services connected via `app_network` bridge network
-- Services use DNS names (e.g., `postgres`, `app`)
-- No hardcoded container names for better scalability
+- Services communicate using DNS names (`postgres`, `redis`, `app`)
+- Persistent volumes for data (`postgres_data`, `redis_data`)
 
 **Features:**
 - Auto-restart policies (`unless-stopped`)
 - Health checks on all core services
 - Environment-based configuration via `.env`
-- Ready to add more services
+- Background task processing with Celery
+- Real-time task monitoring with Flower
 
 ### Docker Management Commands
 
 ```bash
-# Start services (production mode)
+# Start all production services (app, postgres, redis, celery)
 docker-compose up -d
 
-# Start with dev tools (Adminer on :8080)
+# Start with dev tools (+ Adminer on :8080, Flower on :5555)
 docker-compose --profile dev up -d
 
 # View logs
 docker-compose logs -f app
+docker-compose logs -f celery_worker
 docker-compose logs -f postgres
+docker-compose logs -f redis
 
 # Restart specific service
 docker-compose restart app
+docker-compose restart celery_worker
 
 # Stop services (keeps volumes)
 docker-compose down

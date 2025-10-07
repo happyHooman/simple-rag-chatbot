@@ -197,36 +197,39 @@ class TestErrorHandling:
 
 
 class TestEmbeddingsManagement:
-    """Test embeddings management functionality (requires database)."""
+    """Test embeddings management functionality (now async with Celery)."""
     
-    def test_generate_and_query_flow(self):
-        """Test complete flow: generate embeddings then query."""
-        # First generate embeddings
+    def test_generate_embeddings_task_dispatch(self):
+        """Test that generate embeddings dispatches a task successfully."""
+        # Dispatch embeddings generation task
         gen_response = client.post("/generate-embeddings", headers=HEADERS)
         assert gen_response.status_code == 200
         gen_data = gen_response.json()
-        assert gen_data["status"] == "success"
-        assert gen_data["count"] > 0
+        assert gen_data["status"] == "processing"
+        assert "task_id" in gen_data
         
-        # Then query should work
-        query_response = client.post(
-            "/ask-question",
-            json={"user_question": "How do I reset my password?"},
-            headers=HEADERS
-        )
-        assert query_response.status_code == 200
+        # Verify we can check task status
+        task_id = gen_data["task_id"]
+        status_response = client.get(f"/tasks/{task_id}", headers=HEADERS)
+        assert status_response.status_code == 200
+        status_data = status_response.json()
+        assert status_data["task_id"] == task_id
+        assert "state" in status_data
     
-    def test_update_embeddings_incremental(self):
-        """Test that update-embeddings works incrementally."""
-        # First generate
-        client.post("/generate-embeddings", headers=HEADERS)
-        
-        # Then update
+    def test_update_embeddings_task_dispatch(self):
+        """Test that update embeddings dispatches a task successfully."""
+        # Dispatch embeddings update task
         update_response = client.post("/update-embeddings", headers=HEADERS)
         assert update_response.status_code == 200
+        update_data = update_response.json()
+        assert update_data["status"] == "processing"
+        assert "task_id" in update_data
         
-        data = update_response.json()
-        assert "changes" in data
-        # After first generation and immediate update, should have no changes
-        assert data["changes"]["total"] >= 0
+        # Verify we can check task status
+        task_id = update_data["task_id"]
+        status_response = client.get(f"/tasks/{task_id}", headers=HEADERS)
+        assert status_response.status_code == 200
+        status_data = status_response.json()
+        assert status_data["task_id"] == task_id
+        assert "state" in status_data
 

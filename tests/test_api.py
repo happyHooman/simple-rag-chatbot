@@ -48,27 +48,44 @@ class TestAskQuestionEndpoint:
 
 
 class TestEmbeddingsEndpoints:
-    """Test embeddings management endpoints."""
+    """Test embeddings management endpoints (now async with Celery)."""
     
-    def test_generate_embeddings_success(self):
-        """Test successful embeddings generation (requires database)."""
+    def test_generate_embeddings_dispatch(self):
+        """Test embeddings generation dispatches a task."""
         response = client.post("/generate-embeddings", headers=HEADERS)
         
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
-        assert data["status"] == "success"
-        assert "count" in data
-        assert data["count"] > 0
+        assert data["status"] == "processing"
+        assert "task_id" in data
+        assert "message" in data
+        # Task ID should be a valid UUID-like string
+        assert len(data["task_id"]) > 0
     
-    def test_update_embeddings_success(self):
-        """Test successful embeddings update (requires database)."""
+    def test_update_embeddings_dispatch(self):
+        """Test embeddings update dispatches a task."""
         response = client.post("/update-embeddings", headers=HEADERS)
         
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
-        assert "changes" in data
-        assert "added" in data["changes"]
-        assert "updated" in data["changes"]
-        assert "removed" in data["changes"]
+        assert data["status"] == "processing"
+        assert "task_id" in data
+        assert "message" in data
+
+
+class TestTaskStatusEndpoint:
+    """Test task status endpoint."""
+    
+    def test_task_status_endpoint_exists(self):
+        """Test that task status endpoint is accessible."""
+        # Use a fake task ID to test endpoint existence
+        fake_task_id = "12345678-1234-1234-1234-123456789012"
+        response = client.get(f"/tasks/{fake_task_id}", headers=HEADERS)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "task_id" in data
+        assert "state" in data
+        assert data["task_id"] == fake_task_id

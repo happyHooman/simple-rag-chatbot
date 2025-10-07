@@ -1,0 +1,122 @@
+╔═══════════════════════════════════════════════════════════════╗
+║           🌐 QUICK BROWSER TESTING REFERENCE                 ║
+╚═══════════════════════════════════════════════════════════════╝
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📌 URLS TO OPEN                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔹 Swagger UI (API Testing):   http://localhost:8000/docs
+🔹 ReDoc (API Docs):           http://localhost:8000/redoc  
+🔹 Flower (Task Monitor):      http://localhost:5555
+🔹 Adminer (Database UI):      http://localhost:8080
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🔐 CREDENTIALS                                              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Swagger API Token:   test_token
+                     (Click "Authorize" button, enter token)
+
+Adminer Login:
+  System:     PostgreSQL
+  Server:     postgres
+  Username:   postgres
+  Password:   postgres
+  Database:   faq_embeddings
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🧪 TESTING SEQUENCE                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1️⃣  Swagger: POST /generate-embeddings
+   → Copy task_id from response
+
+2️⃣  Swagger: GET /tasks/{task_id}
+   → Paste task_id
+   → Refresh until state = "SUCCESS"
+
+3️⃣  Flower: Click "Tasks" tab
+   → Find your task in the list
+   → Click to see execution details
+
+4️⃣  Adminer: Login → faq_embeddings table
+   → Should see 10 rows with embeddings
+
+5️⃣  Swagger: POST /ask-question
+   Request Body:
+   {
+     "user_question": "How do I reset my password?"
+   }
+   → Get AI-powered answer!
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📊 WHAT YOU'LL SEE IN EACH UI                               ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+SWAGGER UI:
+  • Green "Authorize" button (top right)
+  • Expandable endpoint sections
+  • "Try it out" buttons
+  • "Execute" to run requests
+  • Response body with status codes
+  • Example responses
+
+FLOWER DASHBOARD:
+  • Dashboard: Workers count, task stats
+  • Tasks: Full task history with filters
+  • Workers: rebeldot_celery_worker (Online)
+  • Monitor: Real-time task graphs
+  • Broker: Redis connection info
+  
+ADMINER:
+  • Login form (left sidebar)
+  • Database tree navigation
+  • SQL query editor
+  • Table browser with pagination
+  • Export/Import tools
+  • Visual schema
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🎯 COOL THINGS TO TRY                                       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1. Generate embeddings while watching Flower in real-time
+2. Ask different questions in Swagger:
+   - "How do I reset my password?"
+   - "What is VPN?"
+   - "Tell me about company policies" (compliance)
+3. Run SQL queries in Adminer:
+   SELECT COUNT(*) FROM faq_embeddings;
+4. Check worker stats in Flower (2 concurrent workers)
+5. Compare task execution times in Flower
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚠️  TROUBLESHOOTING                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Can't connect?
+  → Run: docker compose ps
+  → All should be "Up" and "healthy"
+
+401 Unauthorized in Swagger?
+  → Click "Authorize" first
+  → Enter: test_token
+
+Flower not loading?
+  → Wait 15 seconds (dev dependencies installing)
+  → Check: docker compose logs flower
+
+Adminer connection failed?
+  → Server must be: postgres (not localhost)
+  → Check postgres is healthy: docker compose ps
+
+No embeddings in database?
+  → Run /generate-embeddings endpoint first
+  → Check task succeeded in /tasks/{task_id}
+
+╔═══════════════════════════════════════════════════════════════╗
+║  💡 PRO TIP: Open all 4 URLs in separate browser tabs       ║
+║  and arrange them in a 2x2 grid for the best experience!    ║
+╚═══════════════════════════════════════════════════════════════╝
+

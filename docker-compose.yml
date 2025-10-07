@@ -21,6 +21,22 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: rebeldot_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
   app:
     build: .
     container_name: rebeldot_app
@@ -30,10 +46,13 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-faq_embeddings}
+      REDIS_URL: redis://redis:6379/0
       HOST: 0.0.0.0
       PYTHONPATH: /app
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app_network
@@ -43,6 +62,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    container_name: rebeldot_celery_worker
+    command: .venv/bin/celery -A app.celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-faq_embeddings}
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
     restart: unless-stopped
 
   # Development tools (only run with --profile dev)
@@ -61,9 +99,34 @@ services:
     profiles:
       - dev
 
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rebeldot_flower
+    command: sh -c "uv sync --extra dev && .venv/bin/celery -A app.celery_app flower --port=5555 --broker=redis://redis:6379/0"
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - app_network
+    restart: unless-stopped
+    profiles:
+      - dev
+
 networks:
   app_network:
     driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:

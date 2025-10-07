@@ -2,7 +2,6 @@
 from unittest.mock import patch, MagicMock
 
 from app.api.helpers.health_check import (
-    check_docker_container,
     check_database_connection,
     check_embeddings_status,
     get_comprehensive_health
@@ -26,43 +25,6 @@ class HealthStatus:
     # Embeddings status
     LOADED = "loaded"
     EMPTY = "empty"
-
-
-class TestDockerContainerCheck:
-    """Docker container health check."""
-    
-    @patch('subprocess.run')
-    def test_docker_container_running(self, mock_run):
-        """Test when Docker container is running."""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "Up 2 hours"
-        
-        result = check_docker_container()
-        
-        assert result["status"] == HealthStatus.RUNNING
-        assert result["running"] is True
-        assert "Up" in result["container_status"]
-    
-    @patch('subprocess.run')
-    def test_docker_container_not_running(self, mock_run):
-        """Test when Docker container is not running."""
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = ""
-        
-        result = check_docker_container()
-        
-        assert result["status"] == HealthStatus.STOPPED
-        assert result["running"] is False
-    
-    @patch('subprocess.run')
-    def test_docker_command_failed(self, mock_run):
-        """Test when Docker command fails."""
-        mock_run.side_effect = FileNotFoundError("Docker not found")
-        
-        result = check_docker_container()
-        
-        assert result["status"] == HealthStatus.ERROR
-        assert result["running"] is False
 
 
 class TestDatabaseConnectionCheck:
@@ -121,34 +83,39 @@ class TestEmbeddingsStatusCheck:
 class TestComprehensiveHealth:
     """Test comprehensive health check."""
     
-    @patch('app.api.helpers.health_check.check_docker_container')
+    @patch('app.api.helpers.health_check.check_celery_worker')
+    @patch('app.api.helpers.health_check.check_redis_connection')
     @patch('app.api.helpers.health_check.check_database_connection')
     @patch('app.api.helpers.health_check.check_embeddings_status')
-    def test_all_services_healthy(self, mock_embeddings, mock_db, mock_docker):
+    def test_all_services_healthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
         """Test when all services are healthy."""
-        mock_docker.return_value = {"status": HealthStatus.RUNNING, "running": True}
         mock_db.return_value = {"status": HealthStatus.CONNECTED, "connection": "successful"}
         mock_embeddings.return_value = {"status": HealthStatus.LOADED, "has_embeddings": True}
+        mock_redis.return_value = {"status": HealthStatus.CONNECTED, "version": "7.0.0"}
+        mock_celery.return_value = {"status": HealthStatus.RUNNING, "worker_count": 1}
         
         result = get_comprehensive_health()
         
         assert result["overall_status"] == HealthStatus.OPERATIONAL
-        assert result["summary"]["docker_running"] is True
         assert result["summary"]["database_connected"] is True
+        assert result["summary"]["redis_connected"] is True
+        assert result["summary"]["celery_workers_active"] is True
         assert result["summary"]["embeddings_ready"] is True
     
-    @patch('app.api.helpers.health_check.check_docker_container')
+    @patch('app.api.helpers.health_check.check_celery_worker')
+    @patch('app.api.helpers.health_check.check_redis_connection')
     @patch('app.api.helpers.health_check.check_database_connection')
     @patch('app.api.helpers.health_check.check_embeddings_status')
-    def test_some_services_unhealthy(self, mock_embeddings, mock_db, mock_docker):
+    def test_some_services_unhealthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
         """Test when some services are unhealthy."""
-        mock_docker.return_value = {"status": HealthStatus.STOPPED, "running": False}
         mock_db.return_value = {"status": HealthStatus.CONNECTED, "connection": "successful"}
         mock_embeddings.return_value = {"status": HealthStatus.LOADED, "has_embeddings": True}
+        mock_redis.return_value = {"status": HealthStatus.DISCONNECTED, "error": "Connection refused"}
+        mock_celery.return_value = {"status": HealthStatus.RUNNING, "worker_count": 1}
         
         result = get_comprehensive_health()
         
         assert result["overall_status"] == HealthStatus.DEGRADED
-        assert result["summary"]["docker_running"] is False
         assert result["summary"]["database_connected"] is True
+        assert result["summary"]["redis_connected"] is False
         assert result["summary"]["embeddings_ready"] is True

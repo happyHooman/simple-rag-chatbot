@@ -79,7 +79,7 @@ def generate_embeddings() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Failed to generate embeddings: {str(e)}")
-        return {"status": "error", "message": f"Failed to generate embeddings: {str(e)}"}
+        return {"status": "error", "message": str(e), "count": 0}
 
 
 def update_embeddings() -> dict[str, Any]:
@@ -161,4 +161,8 @@ def update_embeddings() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Failed to update embeddings: {str(e)}")
-        return {"status": "error", "message": f"Failed to update embeddings: {str(e)}"}
+        return {
+            "status": "error",
+            "message": str(e),
+            "changes": {"added": 0, "updated": 0, "removed": 0, "total": 0}
+        }
