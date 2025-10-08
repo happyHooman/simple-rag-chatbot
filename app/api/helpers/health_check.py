@@ -13,7 +13,7 @@ from ..embeddings import get_db_cursor, get_embeddings_count
 def check_database_connection() -> dict[str, Any]:
     try:
         if not settings.DATABASE_URL:
-            return {"status": "error", "message": "DATABASE_URL not configured"}
+            return {"status": "error", "message": "DATABASE_URL not configured", "connection": "error"}
 
         with get_db_cursor(commit=False) as cursor:
             cursor.execute(HEALTH_CHECK_PING)
@@ -22,15 +22,27 @@ def check_database_connection() -> dict[str, Any]:
             cursor.execute(HEALTH_CHECK_PGVECTOR)
             vector_extension = cursor.fetchone()
 
-        if vector_extension is None:
-            return {"status": "degraded", "message": "pgvector extension not available"}
+        pgvector_available = vector_extension is not None
 
-        return {"status": "healthy", "message": "Connected"}
+        if not pgvector_available:
+            return {
+                "status": "degraded",
+                "message": "pgvector extension not available",
+                "connection": "successful",
+                "pgvector_available": False
+            }
+
+        return {
+            "status": "connected",
+            "message": "Connected",
+            "connection": "successful",
+            "pgvector_available": True
+        }
 
     except OperationalError as e:
-        return {"status": "unhealthy", "message": f"Connection failed: {str(e)}"}
+        return {"status": "error", "message": f"Connection failed: {str(e)}", "connection": "error"}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e), "connection": "error"}
 
 
 def check_embeddings_status() -> dict[str, Any]:
@@ -38,11 +50,21 @@ def check_embeddings_status() -> dict[str, Any]:
         embeddings_count = get_embeddings_count()
 
         if embeddings_count > 0:
-            return {"status": "healthy", "message": "Embeddings loaded"}
+            return {
+                "status": "loaded",
+                "message": f"{embeddings_count} embeddings loaded",
+                "embeddings_count": embeddings_count,
+                "has_embeddings": True
+            }
         else:
-            return {"status": "healthy", "message": "No embeddings (empty database)"}
+            return {
+                "status": "empty",
+                "message": "No embeddings (empty database)",
+                "embeddings_count": 0,
+                "has_embeddings": False
+            }
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e), "embeddings_count": 0, "has_embeddings": False}
 
 
 def check_redis_connection() -> dict[str, Any]:
@@ -76,9 +98,22 @@ def get_comprehensive_health() -> dict[str, Any]:
     redis_status = check_redis_connection()
     celery_status = check_celery_worker()
 
-    all_healthy = all(
-        service.get("status") == "healthy"
-        for service in [database_status, embeddings_status, redis_status, celery_status]
+    # Create summary with boolean flags
+    summary = {
+        "database_connected": database_status.get("status") in ["connected", "healthy"],
+        "redis_connected": redis_status.get("status") in ["healthy", "connected"],
+        "celery_workers_active": celery_status.get("status") in ["healthy", "running"],
+        "embeddings_ready": embeddings_status.get("has_embeddings", False)
+    }
+
+    # Check if all services are in good state
+    # Note: pgvector_available defaults to True if not present (for backward compatibility with tests)
+    all_healthy = (
+        database_status.get("status") in ["connected", "healthy"] and
+        database_status.get("pgvector_available", True) and
+        embeddings_status.get("status") in ["loaded", "empty"] and
+        redis_status.get("status") in ["healthy", "connected"] and
+        celery_status.get("status") in ["healthy", "running"]
     )
 
     has_degraded = any(
@@ -86,16 +121,23 @@ def get_comprehensive_health() -> dict[str, Any]:
         for service in [database_status, embeddings_status, redis_status, celery_status]
     )
 
+    has_disconnected = (
+        not summary["database_connected"] or
+        not summary["redis_connected"] or
+        not summary["celery_workers_active"]
+    )
+
     if all_healthy:
-        overall = "healthy"
-    elif has_degraded:
+        overall = "operational"
+    elif has_degraded or has_disconnected:
         overall = "degraded"
     else:
         overall = "unhealthy"
 
     return {
-        "status": overall,
+        "overall_status": overall,
         "timestamp": datetime.now(UTC).isoformat(),
+        "summary": summary,
         "services": {
             "database": database_status,
             "redis": redis_status,
