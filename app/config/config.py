@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     # API Configuration
-    API_TITLE: str = "RebelDot Chatbot"
+    API_TITLE: str = "FAQ Chatbot"
     API_VERSION: str = "1.0.0"
     API_DESCRIPTION: str = "FAQ Chatbot API"
 
@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
 
     # Q&A Service Settings
-    SIMILARITY_THRESHOLD: float = 0.5
+    SIMILARITY_THRESHOLD: float = 0.4
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
-    OPENAI_CHAT_TEMPERATURE: float = 0.7
+    OPENAI_CHAT_TEMPERATURE: float = 0.3
 
     # Authentication Settings (Required)
     VALID_TOKENS: str
