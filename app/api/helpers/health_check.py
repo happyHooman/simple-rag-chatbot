@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
@@ -92,11 +93,14 @@ def check_celery_worker() -> dict[str, Any]:
         return {"status": "error", "message": str(e)}
 
 
-def get_comprehensive_health() -> dict[str, Any]:
-    database_status = check_database_connection()
-    embeddings_status = check_embeddings_status()
-    redis_status = check_redis_connection()
-    celery_status = check_celery_worker()
+async def get_comprehensive_health() -> dict[str, Any]:
+    # Run all checks concurrently for better performance
+    database_status, embeddings_status, redis_status, celery_status = await asyncio.gather(
+        asyncio.to_thread(check_database_connection),
+        asyncio.to_thread(check_embeddings_status),
+        asyncio.to_thread(check_redis_connection),
+        asyncio.to_thread(check_celery_worker),
+    )
 
     # Create summary with boolean flags
     summary = {

@@ -1,4 +1,5 @@
 """Tests for health check functionality."""
+import pytest
 from unittest.mock import patch, MagicMock
 
 from app.api.helpers.health_check import (
@@ -87,14 +88,15 @@ class TestComprehensiveHealth:
     @patch('app.api.helpers.health_check.check_redis_connection')
     @patch('app.api.helpers.health_check.check_database_connection')
     @patch('app.api.helpers.health_check.check_embeddings_status')
-    def test_all_services_healthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
+    @pytest.mark.asyncio
+    async def test_all_services_healthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
         """Test when all services are healthy."""
         mock_db.return_value = {"status": HealthStatus.CONNECTED, "connection": "successful"}
         mock_embeddings.return_value = {"status": HealthStatus.LOADED, "has_embeddings": True}
         mock_redis.return_value = {"status": HealthStatus.CONNECTED, "version": "7.0.0"}
         mock_celery.return_value = {"status": HealthStatus.RUNNING, "worker_count": 1}
         
-        result = get_comprehensive_health()
+        result = await get_comprehensive_health()
         
         assert result["overall_status"] == HealthStatus.OPERATIONAL
         assert result["summary"]["database_connected"] is True
@@ -106,14 +108,15 @@ class TestComprehensiveHealth:
     @patch('app.api.helpers.health_check.check_redis_connection')
     @patch('app.api.helpers.health_check.check_database_connection')
     @patch('app.api.helpers.health_check.check_embeddings_status')
-    def test_some_services_unhealthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
+    @pytest.mark.asyncio
+    async def test_some_services_unhealthy(self, mock_embeddings, mock_db, mock_redis, mock_celery):
         """Test when some services are unhealthy."""
         mock_db.return_value = {"status": HealthStatus.CONNECTED, "connection": "successful"}
         mock_embeddings.return_value = {"status": HealthStatus.LOADED, "has_embeddings": True}
         mock_redis.return_value = {"status": HealthStatus.DISCONNECTED, "error": "Connection refused"}
         mock_celery.return_value = {"status": HealthStatus.RUNNING, "worker_count": 1}
         
-        result = get_comprehensive_health()
+        result = await get_comprehensive_health()
         
         assert result["overall_status"] == HealthStatus.DEGRADED
         assert result["summary"]["database_connected"] is True

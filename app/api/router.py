@@ -23,7 +23,7 @@ async def root(token: str = Depends(get_token)) -> dict[str, str]:
 @router.get("/health")
 async def health_check() -> dict[str, Any]:
     """Health check (public)."""
-    return get_comprehensive_health()
+    return await get_comprehensive_health()
 
 
 @router.post("/ask-question", response_model=AskQuestionResponse)
