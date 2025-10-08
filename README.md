@@ -1,4 +1,4 @@
-# RebelDot Chatbot
+# FAQ Chatbot
 
 An intelligent FAQ assistant powered by FastAPI, OpenAI embeddings, and semantic search. Features AI-powered question routing, background task processing with Celery, and comprehensive monitoring tools.
 
@@ -211,14 +211,14 @@ docker-compose ps
 ### Docker Architecture
 
 **Core Services (Production):**
-- **rebeldot_app** - FastAPI application on port 8000
-- **rebeldot_postgres** - PostgreSQL + pgvector on port 5432
-- **rebeldot_redis** - Redis cache/broker on port 6379
-- **rebeldot_celery_worker** - Background task processor (Celery)
+- **faq_chatbot_app** - FastAPI application on port 8000
+- **faq_chatbot_postgres** - PostgreSQL + pgvector on port 5432
+- **faq_chatbot_redis** - Redis cache/broker on port 6379
+- **faq_chatbot_celery_worker** - Background task processor (Celery)
 
 **Development Tools** (`--profile dev`):
-- **rebeldot_adminer** - Database admin UI on port 8080
-- **rebeldot_flower** - Celery task monitor on port 5555
+- **faq_chatbot_adminer** - Database admin UI on port 8080
+- **faq_chatbot_flower** - Celery task monitor on port 5555
 
 **Networking:**
 - All services connected via `app_network` bridge network

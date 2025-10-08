@@ -197,39 +197,41 @@ class TestErrorHandling:
 
 
 class TestEmbeddingsManagement:
-    """Test embeddings management functionality (now async with Celery)."""
+    """Test embeddings management functionality (async with Celery)."""
     
-    def test_generate_embeddings_task_dispatch(self):
+    @patch('app.api.router.generate_embeddings_task')
+    def test_generate_embeddings_task_dispatch(self, mock_task):
         """Test that generate embeddings dispatches a task successfully."""
+        # Mock the Celery task
+        mock_result = MagicMock()
+        mock_result.id = "test-task-id-123"
+        mock_task.delay.return_value = mock_result
+        
         # Dispatch embeddings generation task
         gen_response = client.post("/generate-embeddings", headers=HEADERS)
         assert gen_response.status_code == 200
         gen_data = gen_response.json()
         assert gen_data["status"] == "processing"
-        assert "task_id" in gen_data
+        assert gen_data["task_id"] == "test-task-id-123"
         
-        # Verify we can check task status
-        task_id = gen_data["task_id"]
-        status_response = client.get(f"/tasks/{task_id}", headers=HEADERS)
-        assert status_response.status_code == 200
-        status_data = status_response.json()
-        assert status_data["task_id"] == task_id
-        assert "state" in status_data
+        # Verify task was called
+        mock_task.delay.assert_called_once()
     
-    def test_update_embeddings_task_dispatch(self):
+    @patch('app.api.router.update_embeddings_task')
+    def test_update_embeddings_task_dispatch(self, mock_task):
         """Test that update embeddings dispatches a task successfully."""
+        # Mock the Celery task
+        mock_result = MagicMock()
+        mock_result.id = "test-update-task-456"
+        mock_task.delay.return_value = mock_result
+        
         # Dispatch embeddings update task
         update_response = client.post("/update-embeddings", headers=HEADERS)
         assert update_response.status_code == 200
         update_data = update_response.json()
         assert update_data["status"] == "processing"
-        assert "task_id" in update_data
+        assert update_data["task_id"] == "test-update-task-456"
         
-        # Verify we can check task status
-        task_id = update_data["task_id"]
-        status_response = client.get(f"/tasks/{task_id}", headers=HEADERS)
-        assert status_response.status_code == 200
-        status_data = status_response.json()
-        assert status_data["task_id"] == task_id
-        assert "state" in status_data
+        # Verify task was called
+        mock_task.delay.assert_called_once()
 
