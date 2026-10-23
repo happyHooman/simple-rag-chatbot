@@ -51,5 +51,6 @@ From the repo root:
 ```bash
 uv run ruff check
 uv run mypy
-uv run pytest
+uv run pytest           # offline: no API key or services needed
+uv run pytest --live    # also runs tests against real OpenAI/Postgres/Redis/Docker
 ```

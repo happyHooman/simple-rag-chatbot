@@ -33,7 +33,7 @@ def main():
     checks = [
         (["ruff", "check", "app/"], "Code linting"),
         (["mypy", "app/"], "Type checking"),
-        (["pytest", "tests/sanity/", "-v"], "Sanity tests"),
+        (["pytest", "tests/sanity/", "--live", "-v"], "Sanity tests"),
     ]
     
     all_passed = True
