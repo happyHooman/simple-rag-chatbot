@@ -1,0 +1,50 @@
+name: Lab proposal
+description: Propose a new hands-on lab
+labels: ["lab proposal"]
+body:
+  - type: dropdown
+    id: track
+    attributes:
+      label: Track
+      options:
+        - Foundations
+        - RAG
+        - Agent patterns
+        - Multi-agent
+        - Evals and observability
+        - Ops
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Lab title
+      placeholder: Hybrid search with BM25 + embeddings
+    validations:
+      required: true
+  - type: textarea
+    id: concept
+    attributes:
+      label: Concept
+      description: What idea or technique does the lab teach? Why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: build
+    attributes:
+      label: What the learner builds
+      description: The runnable thing they end up with, and the knobs they can experiment with.
+    validations:
+      required: true
+  - type: textarea
+    id: eval
+    attributes:
+      label: How it's evaluated
+      description: How does the learner know it works, or that a change made it better?
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: Dependencies and prerequisites
+      description: Services, API keys, prior labs.

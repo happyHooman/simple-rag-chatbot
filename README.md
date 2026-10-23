@@ -54,3 +54,9 @@ uv run mypy
 uv run pytest           # offline: no API key or services needed
 uv run pytest --live    # also runs tests against real OpenAI/Postgres/Redis/Docker
 ```
+
+## Contributing
+
+Contributions are welcome: new labs, fixes and docs. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) first, and open a
+[lab proposal](https://github.com/happyHooman/simple-rag-chatbot/issues/new?template=lab_proposal.yml) before building a new lab.
