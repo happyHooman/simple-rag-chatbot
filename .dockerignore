@@ -21,8 +21,8 @@ wheels/
 *.egg
 
 # Virtual environments
-.env
-.venv
+**/.env
+**/.venv
 env/
 venv/
 ENV/
@@ -50,21 +50,21 @@ Thumbs.db
 .gitignore
 
 # Docker
-Dockerfile
-docker-compose.yml
+**/Dockerfile
+**/docker-compose.yml
 .dockerignore
 
 # Documentation
-*.md
+**/*.md
 !README.md
 
 # Tests
-tests/
-test_*.py
+**/tests/
+**/test_*.py
 pytest.ini
 
 # Logs
-*.log
+**/*.log
 logs/
 
 # Temporary files

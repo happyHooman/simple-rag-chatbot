@@ -37,7 +37,9 @@ services:
       - redis_data:/data
 
   app:
-    build: .
+    build:
+      context: ../../..
+      dockerfile: labs/rag/01-embeddings-similarity/Dockerfile
     container_name: faq_chatbot_app
     ports:
       - "${APP_PORT:-8000}:8000"
@@ -47,7 +49,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-faq_embeddings}
       REDIS_URL: redis://redis:6379/0
       HOST: 0.0.0.0
-      PYTHONPATH: /app
+      PYTHONPATH: /app/labs/rag/01-embeddings-similarity
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,15 +66,17 @@ services:
     restart: unless-stopped
 
   celery_worker:
-    build: .
+    build:
+      context: ../../..
+      dockerfile: labs/rag/01-embeddings-similarity/Dockerfile
     container_name: faq_chatbot_celery_worker
-    command: .venv/bin/celery -A app.celery_app worker --loglevel=info --concurrency=2
+    command: /app/.venv/bin/celery -A app.celery_app worker --loglevel=info --concurrency=2
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-faq_embeddings}
       REDIS_URL: redis://redis:6379/0
-      PYTHONPATH: /app
+      PYTHONPATH: /app/labs/rag/01-embeddings-similarity
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,10 +104,10 @@ services:
 
   flower:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: labs/rag/01-embeddings-similarity/Dockerfile
     container_name: faq_chatbot_flower
-    command: sh -c "uv sync --extra dev && .venv/bin/celery -A app.celery_app flower --port=5555 --broker=redis://redis:6379/0"
+    command: sh -c "uv sync --extra dev && /app/.venv/bin/celery -A app.celery_app flower --port=5555 --broker=redis://redis:6379/0"
     ports:
       - "${FLOWER_PORT:-5555}:5555"
     env_file:
@@ -112,7 +116,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      PYTHONPATH: /app
+      PYTHONPATH: /app/labs/rag/01-embeddings-similarity
     depends_on:
       - redis
       - celery_worker

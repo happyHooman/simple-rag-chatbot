@@ -1,4 +1,8 @@
-# FAQ Chatbot
+# Lab 01 - Embeddings & Similarity: FAQ Chatbot
+
+> Part of the [AI Learning Playground](../../../README.md). Install dependencies once from the
+> repo root (`uv sync --extra dev`), then run every command below from this folder
+> (`labs/rag/01-embeddings-similarity`).
 
 An intelligent FAQ assistant powered by FastAPI, OpenAI embeddings, and semantic search. Features AI-powered question routing, background task processing with Celery, and comprehensive monitoring tools.
 

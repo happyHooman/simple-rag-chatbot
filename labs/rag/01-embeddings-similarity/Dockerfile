@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Build context is the repo root (see docker-compose.yml).
 # Copy dependency files (include README for build metadata)
 COPY pyproject.toml uv.lock README.md ./
 
@@ -19,12 +20,15 @@ RUN pip install uv
 # Install dependencies
 RUN uv sync --frozen
 
-# Copy application code
-COPY . .
+# Copy application code (keeps the repo layout so the workspace still resolves)
+COPY labs/rag/01-embeddings-similarity ./labs/rag/01-embeddings-similarity
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
 USER app
+
+# Run from the lab directory so relative paths (.env, scripts/) resolve as before
+WORKDIR /app/labs/rag/01-embeddings-similarity
 
 # Expose port
 EXPOSE 8000
