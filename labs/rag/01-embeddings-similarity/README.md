@@ -45,8 +45,11 @@ docker compose --profile dev up -d
 # Start server
 uv run python main.py
 
-# Run all tests
+# Run tests (offline, no API key or services needed)
 uv run pytest tests/ -v
+
+# Also run tests that hit real OpenAI/Postgres/Redis/Docker (needs .env)
+uv run pytest tests/ -v --live
 
 # Run sanity tests (prebuild)
 uv run python scripts/prebuild.py
@@ -117,8 +120,11 @@ docker compose --profile dev up -d
 
 ### Quick Test
 ```bash
-# Run all tests
+# Run tests offline (no API key, database, Redis or Docker needed)
 uv run pytest tests/ -v
+
+# Also run the `live` tests against real services (needs a filled-in .env)
+uv run pytest tests/ -v --live
 
 # Run prebuild checks (linting, type checking, sanity tests)
 uv run python scripts/prebuild.py
@@ -130,6 +136,11 @@ uv run python scripts/prebuild.py
 - **Integration tests** - End-to-end API testing
 - **Auth tests** - Authentication and authorization
 - **AI Router tests** - Question classification logic
+
+By default `tests/conftest.py` gives the app dummy settings and replaces OpenAI,
+Postgres, Redis and Celery with fakes. Tests that only make sense against the real
+services (the AI Router tests, the sanity tests and the full-pipeline tests) are
+marked `live` and skipped unless you pass `--live`.
 
 ## 🔧 Configuration
 

@@ -61,6 +61,26 @@ class TestSimilarityThreshold:
         assert data["matched_question"] == "N/A"
 
 
+class TestNonITRouting:
+    """Test the non-IT (compliance) branch without calling the real classifier."""
+
+    @patch('app.api.ask_question.ai_router.classify_question', return_value="non_it")
+    def test_non_it_returns_compliance_response(self, mock_classify):
+        """Test that a non-IT classification returns the fixed compliance answer."""
+        response = client.post(
+            "/ask-question",
+            json={"user_question": "What's the company vacation policy?"},
+            headers=HEADERS
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["source"] == "compliance"
+        assert data["matched_question"] == "N/A"
+        assert "not really what I was trained for" in data["answer"]
+
+
+@pytest.mark.live
 class TestFullPipeline:
     """Test the complete question-answering pipeline."""
     
@@ -137,6 +157,7 @@ class TestResponseFormat:
         if data["source"] == "openai":
             assert data["matched_question"] == "N/A"
     
+    @pytest.mark.live
     def test_compliance_response_format(self):
         """Test compliance response format."""
         response = client.post(

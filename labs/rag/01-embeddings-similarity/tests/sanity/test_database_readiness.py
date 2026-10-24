@@ -1,5 +1,10 @@
 import subprocess
 
+import pytest
+
+# Needs Docker and a real .env.
+pytestmark = pytest.mark.live
+
 
 class TestDatabaseReadiness:
     """Test database readiness for deployment."""

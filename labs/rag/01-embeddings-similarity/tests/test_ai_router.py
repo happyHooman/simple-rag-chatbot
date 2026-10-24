@@ -10,6 +10,9 @@ client = TestClient(app)
 VALID_TOKEN = "test_token"
 HEADERS = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
+# These check the real LLM classifier, so they need an OpenAI key.
+pytestmark = pytest.mark.live
+
 
 class TestAIRouter:
     """Test AI Router classification and routing."""
